@@ -1,4 +1,4 @@
-const { getFile, getDirectory, getRepo, getBranch, sendJson } = require('./_github');
+const { getFile, getDirectory, getRepo, getBranch, sendJson } = require('../lib/github');
 
 module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') {

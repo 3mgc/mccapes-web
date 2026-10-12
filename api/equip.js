@@ -1,4 +1,4 @@
-const { getFile, putFile, sendJson } = require('./_github');
+const { getFile, putFile, sendJson } = require('../lib/github');
 
 module.exports = async function handler(req, res) {
     if (req.method === 'OPTIONS') {
