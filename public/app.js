@@ -187,8 +187,17 @@
     async function fetchData() {
         try {
             const res = await fetch('/api/capes');
-            if (!res.ok) throw new Error('Error al obtener datos de la API');
-            const data = await res.json();
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (jsonErr) {
+                if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+                    throw new Error('La ruta /api/capes devolvió una página HTML en lugar de datos JSON.');
+                }
+                throw jsonErr;
+            }
+            if (!res.ok) throw new Error(data.error || 'Error al obtener datos de la API');
 
             appState.users = data.users || {};
             appState.capes = data.capes || [];

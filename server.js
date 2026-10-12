@@ -82,11 +82,14 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // Servir archivos estáticos desde public/
-    let filePath = path.join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
+    // Servir archivos estáticos desde la raíz o public/
+    let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
 
     if (!fs.existsSync(filePath)) {
-        filePath = path.join(__dirname, 'public', 'index.html');
+        filePath = path.join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
+    }
+    if (!fs.existsSync(filePath)) {
+        filePath = path.join(__dirname, 'index.html');
     }
 
     const ext = path.extname(filePath).toLowerCase();
