@@ -1,26 +1,26 @@
-const { getFile, putFile } = require('./_github');
+const { getFile, putFile, sendJson } = require('./_github');
 
 module.exports = async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.statusCode = 200;
+        return res.end();
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Método no permitido. Usa POST' });
+        return sendJson(res, 405, { error: 'Método no permitido. Usa POST' });
     }
 
     try {
         const { username, cape } = req.body || {};
 
         if (!username || typeof username !== 'string' || !username.trim()) {
-            return res.status(400).json({ error: 'Debes proporcionar un nombre de usuario de Minecraft' });
+            return sendJson(res, 400, { error: 'Debes proporcionar un nombre de usuario de Minecraft' });
         }
         if (!cape || typeof cape !== 'string' || !cape.trim()) {
-            return res.status(400).json({ error: 'Debes especificar el nombre del archivo de la capa' });
+            return sendJson(res, 400, { error: 'Debes especificar el nombre del archivo de la capa' });
         }
 
         const cleanUser = username.trim();
@@ -54,14 +54,13 @@ module.exports = async function handler(req, res) {
             }
 
             if (owner && owner.toLowerCase() !== cleanUser.toLowerCase()) {
-                return res.status(403).json({
+                return sendJson(res, 403, {
                     error: `La capa '${cleanCape}' es privada y pertenece exclusivamente al jugador '${owner}'.`
                 });
             }
         }
 
         // 3. Actualizar la capa del usuario
-        // Mantener la clave exacta o sensible si ya existía
         let foundKey = cleanUser;
         for (const k of Object.keys(capesData.users)) {
             if (k.toLowerCase() === cleanUser.toLowerCase()) {
@@ -78,7 +77,7 @@ module.exports = async function handler(req, res) {
 
         await putFile('capes.json', base64Content, commitMsg, sha);
 
-        return res.status(200).json({
+        return sendJson(res, 200, {
             success: true,
             username: foundKey,
             cape: cleanCape,
@@ -87,6 +86,6 @@ module.exports = async function handler(req, res) {
 
     } catch (error) {
         console.error("Error en /api/equip:", error);
-        return res.status(500).json({ error: error.message || 'Error equipando la capa en GitHub' });
+        return sendJson(res, 500, { error: error.message || 'Error equipando la capa en GitHub' });
     }
 };

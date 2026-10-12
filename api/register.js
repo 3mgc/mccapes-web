@@ -1,23 +1,23 @@
-const { getFile, putFile } = require('./_github');
+const { getFile, putFile, sendJson } = require('./_github');
 
 module.exports = async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.statusCode = 200;
+        return res.end();
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Método no permitido. Usa POST' });
+        return sendJson(res, 405, { error: 'Método no permitido. Usa POST' });
     }
 
     try {
         const { username, cape } = req.body || {};
 
         if (!username || typeof username !== 'string' || !username.trim()) {
-            return res.status(400).json({ error: 'Debes proporcionar un nombre de usuario de Minecraft' });
+            return sendJson(res, 400, { error: 'Debes proporcionar un nombre de usuario de Minecraft' });
         }
 
         const cleanUser = username.trim();
@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
         // Comprobar si ya existe (insensible a mayúsculas)
         for (const [k, v] of Object.entries(capesData.users)) {
             if (k.toLowerCase() === cleanUser.toLowerCase()) {
-                return res.status(200).json({
+                return sendJson(res, 200, {
                     status: 'already_exists',
                     username: k,
                     cape: v,
@@ -54,7 +54,7 @@ module.exports = async function handler(req, res) {
 
         await putFile('capes.json', base64Content, commitMsg, sha);
 
-        return res.status(201).json({
+        return sendJson(res, 201, {
             status: 'registered',
             username: cleanUser,
             cape: defaultCape,
@@ -63,6 +63,6 @@ module.exports = async function handler(req, res) {
 
     } catch (error) {
         console.error("Error en /api/register:", error);
-        return res.status(500).json({ error: error.message || 'Error registrando nuevo usuario en GitHub' });
+        return sendJson(res, 500, { error: error.message || 'Error registrando nuevo usuario en GitHub' });
     }
 };

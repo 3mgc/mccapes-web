@@ -1,16 +1,18 @@
-const { getFile, getDirectory, GITHUB_REPO, GITHUB_BRANCH } = require('./_github');
+const { getFile, getDirectory, getRepo, getBranch, sendJson } = require('./_github');
 
 module.exports = async function handler(req, res) {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.statusCode = 200;
+        return res.end();
     }
 
     try {
+        const repo = getRepo();
+        const branch = getBranch();
+
         // 1. Obtener capes.json
         const capesJsonFile = await getFile('capes.json');
         let capesData = { users: {}, public_capes: [], private_capes: {} };
@@ -41,7 +43,6 @@ module.exports = async function handler(req, res) {
                     const isPrivateInJson = Object.values(capesData.private_capes || {}).includes(file.name);
                     const isPrivate = isPrivateName || isPrivateInJson;
 
-                    // Encontrar el dueño si es privada
                     let owner = null;
                     if (isPrivate) {
                         for (const [u, f] of Object.entries(capesData.private_capes || {})) {
@@ -51,7 +52,6 @@ module.exports = async function handler(req, res) {
                             }
                         }
                         if (!owner && isPrivateName) {
-                            // priv_username_capename.ext
                             const parts = file.name.split('_');
                             if (parts.length >= 2) {
                                 owner = parts[1];
@@ -63,8 +63,8 @@ module.exports = async function handler(req, res) {
                         filename: file.name,
                         size: file.size || 0,
                         type: lower.endsWith('.gif') ? 'gif' : 'png',
-                        rawUrl: `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/capes/${file.name}`,
-                        cdnUrl: `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@${GITHUB_BRANCH}/capes/${file.name}`,
+                        rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/capes/${file.name}`,
+                        cdnUrl: `https://cdn.jsdelivr.net/gh/${repo}@${branch}/capes/${file.name}`,
                         isPrivate,
                         owner
                     });
@@ -77,12 +77,12 @@ module.exports = async function handler(req, res) {
 
         // Límites técnicos de GitHub
         const MAX_REPO_RECOMMENDED_BYTES = 1024 * 1024 * 1024; // 1 GB
-        const MAX_CAPES_COUNT = 200; // Límite razonable visual
-        const MAX_SINGLE_FILE_BYTES = 5 * 1024 * 1024; // 5 MB por capa
+        const MAX_CAPES_COUNT = 200;
+        const MAX_SINGLE_FILE_BYTES = 5 * 1024 * 1024;
 
-        res.status(200).json({
-            repository: GITHUB_REPO,
-            branch: GITHUB_BRANCH,
+        return sendJson(res, 200, {
+            repository: repo,
+            branch: branch,
             users: capesData.users || {},
             private_capes: capesData.private_capes || {},
             capes: allCapes,
@@ -100,6 +100,13 @@ module.exports = async function handler(req, res) {
 
     } catch (error) {
         console.error("Error en /api/capes:", error);
-        res.status(500).json({ error: error.message || 'Error cargando capas' });
+        return sendJson(res, 500, {
+            error: error.message || 'Error cargando capas desde GitHub',
+            envConfigured: {
+                hasToken: !!process.env.GITHUB_TOKEN,
+                repo: process.env.GITHUB_REPO || '3mgc/mccapes',
+                branch: process.env.GITHUB_BRANCH || 'main'
+            }
+        });
     }
 };

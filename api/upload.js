@@ -1,31 +1,31 @@
-const { getFile, putFile } = require('./_github');
+const { getFile, putFile, sendJson } = require('./_github');
 
 module.exports = async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
     if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.statusCode = 200;
+        return res.end();
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Método no permitido. Usa POST' });
+        return sendJson(res, 405, { error: 'Método no permitido. Usa POST' });
     }
 
     try {
         const { username, capeName, isPrivate, fileData, fileExtension } = req.body || {};
 
         if (!username || typeof username !== 'string' || !username.trim()) {
-            return res.status(400).json({ error: 'Debes proporcionar tu nombre de usuario de Minecraft' });
+            return sendJson(res, 400, { error: 'Debes proporcionar tu nombre de usuario de Minecraft' });
         }
         if (!fileData || typeof fileData !== 'string') {
-            return res.status(400).json({ error: 'No se recibieron datos de la imagen/archivo' });
+            return sendJson(res, 400, { error: 'No se recibieron datos de la imagen/archivo' });
         }
 
         const ext = (fileExtension || 'png').toLowerCase().replace('.', '');
         if (ext !== 'png' && ext !== 'gif') {
-            return res.status(400).json({ error: 'Formato no soportado. Solo se admiten archivos .png y .gif' });
+            return sendJson(res, 400, { error: 'Formato no soportado. Solo se admiten archivos .png y .gif' });
         }
 
         // Extraer base64 si viene con prefijo Data URL
@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
         const buffer = Buffer.from(base64Clean, 'base64');
         const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
         if (buffer.length > MAX_SIZE) {
-            return res.status(400).json({ error: `El archivo supera el límite permitido de 5 MB (${(buffer.length / 1024 / 1024).toFixed(2)} MB)` });
+            return sendJson(res, 400, { error: `El archivo supera el límite permitido de 5 MB (${(buffer.length / 1024 / 1024).toFixed(2)} MB)` });
         }
 
         const cleanUser = username.trim();
@@ -89,7 +89,6 @@ module.exports = async function handler(req, res) {
 
         if (isPrivate) {
             capesData.private_capes[foundKey] = filename;
-            // Si estaba en públicas, retirarla
             capesData.public_capes = capesData.public_capes.filter(c => c !== filename);
         } else {
             if (!capesData.public_capes.includes(filename)) {
@@ -104,7 +103,7 @@ module.exports = async function handler(req, res) {
 
         await putFile('capes.json', jsonBase64, updateJsonMsg, jsonSha);
 
-        return res.status(200).json({
+        return sendJson(res, 200, {
             success: true,
             filename,
             username: foundKey,
@@ -114,6 +113,6 @@ module.exports = async function handler(req, res) {
 
     } catch (error) {
         console.error("Error en /api/upload:", error);
-        return res.status(500).json({ error: error.message || 'Error procesando la subida en GitHub' });
+        return sendJson(res, 500, { error: error.message || 'Error procesando la subida en GitHub' });
     }
 };
