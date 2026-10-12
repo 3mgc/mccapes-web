@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCCapes Cloud - Panel de Capas Minecraft</title>
+    <link rel="icon" href="https://mc-heads.net/avatar/3mgc/32" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Encabezado Principal -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <span>⚡</span>
+                </div>
+                <div>
+                    <h1 class="brand-title">MCCapes <span>Cloud</span></h1>
+                    <p class="brand-subtitle">Cosméticos para Minecraft 1.8.9 • Forge</p>
+                </div>
+            </div>
+
+            <!-- Widget de Almacenamiento GitHub -->
+            <div class="storage-widget" id="storageWidget">
+                <div class="storage-info">
+                    <span class="storage-label">Almacenamiento GitHub</span>
+                    <span class="storage-stats" id="storageStatsText">0 MB / 1000 MB (0 Capas)</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="storageProgressFill" style="width: 2%;"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Barra de Identidad del Jugador -->
+        <section class="user-card">
+            <div class="user-avatar-wrap">
+                <img id="playerHeadImg" src="https://mc-heads.net/avatar/Steve/64" alt="Cabeza de jugador" class="player-head">
+            </div>
+            <div class="user-details">
+                <label for="usernameInput" class="user-label">Tu Nick de Minecraft (Universocraft / Offline / Premium):</label>
+                <div class="user-input-group">
+                    <input type="text" id="usernameInput" placeholder="Ej: 3mgc, grannydestroyer, Mr_Apendice, rexxsito..." autocomplete="off" spellcheck="false">
+                    <button class="btn btn-primary" id="saveUserBtn">Fijar Nick</button>
+                </div>
+            </div>
+            <div class="user-current-cape">
+                <span class="badge-label">Capa Actual:</span>
+                <span class="badge-cape" id="currentCapeBadge">Cargando...</span>
+            </div>
+        </section>
+
+        <!-- Barra de Pestañas -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="catalog">
+                <span>🌐</span> Catálogo Global (<span id="publicCapesCount">0</span>)
+            </button>
+            <button class="tab-btn" data-tab="upload">
+                <span>📤</span> Subir Nueva Capa (.png / .gif)
+            </button>
+            <button class="tab-btn" data-tab="players">
+                <span>👥</span> Jugadores Vinculados (<span id="playersCount">0</span>)
+            </button>
+        </nav>
+
+        <!-- Pestaña 1: Catálogo Global -->
+        <section class="tab-content active" id="tab-catalog">
+            <!-- Sección de Capas Privadas del Jugador (si tiene) -->
+            <div id="privateCapesSection" class="section-block hidden">
+                <div class="section-header">
+                    <h2>🔒 Tus Capas Privadas (Exclusivas para ti)</h2>
+                    <p class="section-desc">Solo tú puedes ver y equipar estas capas en tu cuenta.</p>
+                </div>
+                <div class="capes-grid" id="privateCapesGrid"></div>
+            </div>
+
+            <div class="section-header">
+                <h2>Catálogo de Capas Globales</h2>
+                <p class="section-desc">Selecciona cualquier capa y haz clic en equipar para aplicarla a tu usuario en GitHub y en el juego.</p>
+            </div>
+
+            <!-- Grid de Capas Públicas -->
+            <div class="capes-grid" id="publicCapesGrid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Cargando capas desde GitHub...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pestaña 2: Subir Nueva Capa -->
+        <section class="tab-content" id="tab-upload">
+            <div class="upload-wrapper">
+                <div class="section-header">
+                    <h2>Subir Nueva Capa a GitHub</h2>
+                    <p class="section-desc">Soporta capas estáticas (.PNG) y capas animadas (.GIF) con proporción 2:1.</p>
+                </div>
+
+                <div class="upload-grid">
+                    <!-- Dropzone / Selector de archivo -->
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" id="fileInput" accept=".png,.gif,image/png,image/gif" hidden>
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">📁</div>
+                            <h3>Arrastra tu capa aquí o haz clic para seleccionar</h3>
+                            <p class="dropzone-hint">Formatos: .PNG o .GIF • Máximo 5 MB • Proporción 2:1</p>
+                            <button type="button" class="btn btn-outline" id="browseBtn">Examinar Archivo</button>
+                        </div>
+                    </div>
+
+                    <!-- Panel de Previsualización y Formulario -->
+                    <div class="upload-form-panel">
+                        <div class="preview-box">
+                            <span class="preview-title">Vista Previa de la Capa</span>
+                            <div class="preview-canvas-wrap">
+                                <img id="uploadPreviewImg" src="" alt="Vista previa" class="preview-img hidden">
+                                <div id="previewPlaceholder" class="preview-placeholder">
+                                    <span>Selecciona un archivo para ver la textura</span>
+                                </div>
+                            </div>
+                            <div class="preview-meta hidden" id="previewMeta">
+                                <span class="badge" id="badgeResolution">0 x 0 px</span>
+                                <span class="badge" id="badgeRatio">2:1</span>
+                                <span class="badge" id="badgeFileSize">0 KB</span>
+                            </div>
+                        </div>
+
+                        <form id="uploadForm" class="upload-fields">
+                            <div class="form-group">
+                                <label for="capeNameInput">Nombre de la Capa:</label>
+                                <input type="text" id="capeNameInput" placeholder="Ej: fuego_azul, galaxia, facha..." required>
+                            </div>
+
+                            <!-- SWITCH DE CAPA PRIVADA -->
+                            <div class="privacy-card">
+                                <div class="privacy-header">
+                                    <div class="privacy-info">
+                                        <label class="switch">
+                                            <input type="checkbox" id="privateCapeCheckbox">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <div>
+                                            <span class="privacy-title">🔒 Capa Privada</span>
+                                            <span class="privacy-tag" id="privacyTagText">Desactivada (Pública)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="privacy-help" id="privacyHelpText">
+                                    Si la activas, la capa solo estará vinculada a tu nick (<strong class="active-user-placeholder">...</strong>) y no aparecerá en el catálogo global de tus amigos.
+                                </p>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-large" id="submitUploadBtn" disabled>
+                                🚀 Subir a GitHub y Equipar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Guía rápida de resoluciones -->
+                <div class="guide-box">
+                    <h3>💡 Resoluciones recomendadas de capas (Proporción 2:1):</h3>
+                    <div class="guide-chips">
+                        <span class="chip"><strong>64x32</strong> (Clásica Vanilla)</span>
+                        <span class="chip"><strong>128x64</strong> (2x HD)</span>
+                        <span class="chip"><strong>256x128</strong> (4x HD)</span>
+                        <span class="chip"><strong>512x256</strong> (8x Ultra HD / GIFs detallados)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pestaña 3: Jugadores Vinculados -->
+        <section class="tab-content" id="tab-players">
+            <div class="section-header">
+                <h2>Jugadores y Capas Actuales en GitHub</h2>
+                <p class="section-desc">Lista en tiempo real extraída de capes.json en el repositorio.</p>
+            </div>
+
+            <div class="players-table-wrap">
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th>Jugador</th>
+                            <th>Capa Equipada</th>
+                            <th>Tipo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersTableBody">
+                        <tr>
+                            <td colspan="4" class="text-center">Cargando jugadores...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Vista Previa Detallada -->
+    <div class="modal hidden" id="previewModal">
+        <div class="modal-backdrop" id="modalBackdrop"></div>
+        <div class="modal-card">
+            <button class="modal-close" id="modalCloseBtn">&times;</button>
+            <h3 id="modalTitle">Detalles de la Capa</h3>
+            <div class="modal-body">
+                <div class="modal-preview-wrap">
+                    <img id="modalImg" src="" alt="Capa">
+                </div>
+                <div class="modal-info" id="modalInfo">
+                    <!-- Info inyectada por JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modalCloseBtn2">Cerrar</button>
+                <button class="btn btn-primary" id="modalEquipBtn">✨ Equipar Esta Capa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
