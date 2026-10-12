@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Panel web para subir y gestionar capas cosméticas de Minecraft sincronizadas con GitHub",
   "scripts": {
-    "dev": "node server.js"
+    "dev": "node local-dev.js"
   },
   "keywords": ["minecraft", "capes", "mccape", "cosmetics"],
   "author": "3mgc",
